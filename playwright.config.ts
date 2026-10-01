@@ -1,0 +1,2 @@
+import { defineConfig, devices } from '@playwright/test';
+export default defineConfig({testDir:'./e2e',timeout:60000,expect:{timeout:10000},retries:1,use:{baseURL:process.env.JTS_BASE_URL||'https://jasperstreatshop.com',trace:'retain-on-failure',screenshot:'only-on-failure',video:'retain-on-failure',locale:'en-GB',timezoneId:'Europe/London'},projects:[{name:'desktop-chromium',use:{...devices['Desktop Chrome']}},{name:'mobile-chromium',use:{...devices['Pixel 7']}}]});

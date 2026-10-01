@@ -1,0 +1,1 @@
+export async function GET(){return Response.json([{id:'jts-prod',name:"Jasper's Treat Shop",url:'https://jasperstreatshop.com',frequencyMinutes:5,checks:['desktop','mobile','checkout','payment-ui']}])}

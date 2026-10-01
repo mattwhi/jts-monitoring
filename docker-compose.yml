@@ -1,0 +1,26 @@
+services:
+  dashboard:
+    build: .
+    container_name: jts-monitor-dashboard
+    restart: unless-stopped
+    ports: ["3000:3000"]
+    environment:
+      DATA_DIR: /data
+    volumes:
+      - jts-monitor-data:/data
+      - jts-monitor-artifacts:/app/test-results
+  worker:
+    build: .
+    container_name: jts-monitor-worker
+    restart: unless-stopped
+    command: ["npm","run","worker"]
+    environment:
+      DATA_DIR: /data
+      JTS_BASE_URL: https://jasperstreatshop.com
+      MONITOR_INTERVAL_MS: 300000
+    volumes:
+      - jts-monitor-data:/data
+      - jts-monitor-artifacts:/app/test-results
+volumes:
+  jts-monitor-data:
+  jts-monitor-artifacts:
