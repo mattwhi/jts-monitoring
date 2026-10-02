@@ -1,12 +1,23 @@
-import Database from 'better-sqlite3';
-import fs from 'fs';
-import path from 'path';
+import Database from "better-sqlite3";
+import fs from "fs";
+import path from "path";
 
-const dir = process.env.DATA_DIR || '/data';
+const dir = process.env.DATA_DIR || "/data";
 fs.mkdirSync(dir, { recursive: true });
-const db = new Database(path.join(dir, 'jts-monitor.db'));
-db.pragma('journal_mode = WAL');
-db.pragma('busy_timeout = 5000');
+const db = new Database(path.join(dir, "jts-monitor.db"));
+// Configure SQLite for concurrent dashboard/worker access.
+// Set the busy timeout first so SQLite waits for an existing lock.
+db.pragma("busy_timeout = 5000");
+
+try {
+  db.pragma("journal_mode = WAL");
+} catch (error: any) {
+  // During `next build`, multiple workers can import this module
+  // concurrently. Another process may already be enabling WAL.
+  if (error?.code !== "SQLITE_BUSY") {
+    throw error;
+  }
+}
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS runs(
