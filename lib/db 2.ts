@@ -1,23 +1,12 @@
-import Database from "better-sqlite3";
-import fs from "fs";
-import path from "path";
+import Database from 'better-sqlite3';
+import fs from 'fs';
+import path from 'path';
 
-const dir = process.env.DATA_DIR || path.join(process.cwd(), "data");
+const dir = process.env.DATA_DIR || '/data';
 fs.mkdirSync(dir, { recursive: true });
-const db = new Database(path.join(dir, "jts-monitor.db"));
-// Configure SQLite for concurrent dashboard/worker access.
-// Set the busy timeout first so SQLite waits for an existing lock.
-db.pragma("busy_timeout = 5000");
-
-try {
-  db.pragma("journal_mode = WAL");
-} catch (error: any) {
-  // During `next build`, multiple workers can import this module
-  // concurrently. Another process may already be enabling WAL.
-  if (error?.code !== "SQLITE_BUSY") {
-    throw error;
-  }
-}
+const db = new Database(path.join(dir, 'jts-monitor.db'));
+db.pragma('journal_mode = WAL');
+db.pragma('busy_timeout = 5000');
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS runs(
@@ -53,13 +42,6 @@ CREATE TABLE IF NOT EXISTS incidents(
   status TEXT NOT NULL,
   summary TEXT NOT NULL
 );
-CREATE TABLE IF NOT EXISTS alert_events(
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  created_at TEXT NOT NULL,
-  event_type TEXT NOT NULL,
-  status TEXT NOT NULL,
-  message TEXT NOT NULL
-);
 CREATE TABLE IF NOT EXISTS run_requests(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   requested_at TEXT NOT NULL,
@@ -72,8 +54,6 @@ CREATE TABLE IF NOT EXISTS settings(
 INSERT OR IGNORE INTO settings(key,value) VALUES('interval_minutes','5');
 INSERT OR IGNORE INTO settings(key,value) VALUES('failure_threshold','2');
 INSERT OR IGNORE INTO settings(key,value) VALUES('retention_days','30');
-INSERT OR IGNORE INTO settings(key,value) VALUES('alerts_enabled','0');
-INSERT OR IGNORE INTO settings(key,value) VALUES('webhook_url','');
 `);
 
 export default db;

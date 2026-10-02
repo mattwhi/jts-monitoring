@@ -1,39 +1,26 @@
-# JTS Monitor v1.2
+# JTS Synthetic Monitoring v1.4
 
-Self-hosted synthetic monitoring for Jasper's Treat Shop. The dashboard is Next.js; the worker runs the proven Playwright desktop/mobile production journey and stores results in SQLite.
+Synthetic customer-journey monitoring for Jasper's Treat Shop.
 
-## v1.2 highlights
+## v1.4
+- SLA/SLO dashboard with 24h, 7d and 30d windows
+- Per-monitor availability and P50/P95/P99 latency
+- 99.9% SLO and error-budget tracking
+- Incident/recovery history in the reliability view
+- JSON reporting endpoint at `/api/report?window=7d`
+- Retention cleanup extended to resolved incidents and alert events
+- Version remains sourced automatically from package.json
 
-- Professional Overview with availability, average duration, P95, incidents and recent runs
-- Manual **Run now** queue from the dashboard
-- Full Runs page and per-run diagnostic log viewer
-- Incident history with automatic recovery
-- Performance history chart
-- Monitor inventory page
-- Live Settings for frequency, consecutive-failure threshold and retention
-- Light/dark mode
-- Dashboard auto-refresh every 30 seconds
-- Worker reads settings without container rebuild
-- Existing production-safe Playwright checkout journey retained; it never clicks Place order
+## Existing monitoring
+Six Playwright checks cover Homepage & Shop, Guest Checkout and Build-a-Treat-Box on desktop and mobile Chromium. v1.3 alerting and recovery behaviour is preserved.
 
-## Deploy
-
+## Local validation
 ```bash
-docker compose up -d --build
+npm install
+npm run build
+npm run test:checkout
+docker compose build --no-cache
+docker compose up -d
 ```
 
-Open `http://YOUR-VM-IP:3000`.
-
-Useful commands:
-
-```bash
-docker compose ps
-docker compose logs -f worker
-docker compose logs -f dashboard
-```
-
-Persistent data lives in the `jts-monitor-data` Docker volume. Playwright artifacts live in `jts-monitor-artifacts`.
-
-## Upgrade from v1.0
-
-Use the same Compose project/volume names and rebuild with v1.2. The SQLite schema is additive, so existing run and incident history is retained.
+Dashboard: http://localhost:3011

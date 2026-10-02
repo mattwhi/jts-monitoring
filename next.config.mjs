@@ -1,2 +1,5 @@
-const nextConfig = { output: 'standalone', serverExternalPackages: ['better-sqlite3'] };
+const nextConfig = {
+  serverExternalPackages: ['better-sqlite3'],
+};
+
 export default nextConfig;

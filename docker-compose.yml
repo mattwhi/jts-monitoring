@@ -3,7 +3,7 @@ services:
     build: .
     container_name: jts-monitor-dashboard
     restart: unless-stopped
-    ports: ["3000:3000"]
+    ports: ["3011:3000"]
     environment:
       DATA_DIR: /data
     volumes:

@@ -1,1 +1,4 @@
-import db from '@/lib/db'; export async function GET(){return Response.json(Object.fromEntries((db.prepare('SELECT key,value FROM settings').all() as any[]).map(x=>[x.key,x.value])))}export async function POST(req:Request){const body=await req.json();for(const [k,v] of Object.entries(body)){if(['interval_minutes','failure_threshold','retention_days'].includes(k))db.prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run(k,String(v))}return Response.json({ok:true})}
+import db from '@/lib/db';
+const allowed=['interval_minutes','failure_threshold','retention_days','alerts_enabled','webhook_url'];
+export async function GET(){return Response.json(Object.fromEntries((db.prepare('SELECT key,value FROM settings').all() as any[]).map(x=>[x.key,x.value])))}
+export async function POST(req:Request){const body=await req.json();for(const [k,v] of Object.entries(body)){if(allowed.includes(k))db.prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run(k,String(v))}return Response.json({ok:true})}
