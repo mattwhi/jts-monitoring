@@ -1,2 +1,23 @@
-import Link from 'next/link'; import ThemeToggle from './ThemeToggle';
-export default function Sidebar(){return <aside className="side"><div className="brand">JTS Monitor<small>SYNTHETIC OBSERVABILITY</small></div><nav className="nav"><Link href="/">Overview</Link><Link href="/monitors">Monitors</Link><Link href="/runs">Runs</Link><Link href="/incidents">Incidents</Link><Link href="/performance">Performance</Link><Link href="/settings">Settings</Link></nav><div className="sidefoot"><span>v1.1</span><ThemeToggle/></div></aside>}
+import Link from "next/link";
+import ThemeToggle from "./ThemeToggle";
+export default function Sidebar() {
+  return (
+    <aside className="side">
+      <div className="brand">
+        JTS Monitor<small>SYNTHETIC OBSERVABILITY</small>
+      </div>
+      <nav className="nav">
+        <Link href="/">Overview</Link>
+        <Link href="/monitors">Monitors</Link>
+        <Link href="/runs">Runs</Link>
+        <Link href="/incidents">Incidents</Link>
+        <Link href="/performance">Performance</Link>
+        <Link href="/settings">Settings</Link>
+      </nav>
+      <div className="sidefoot">
+        <span>v1.2</span>
+        <ThemeToggle />
+      </div>
+    </aside>
+  );
+}

@@ -19,6 +19,22 @@ CREATE TABLE IF NOT EXISTS runs(
   failed INTEGER DEFAULT 0,
   output TEXT DEFAULT ''
 );
+CREATE TABLE IF NOT EXISTS check_results(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id INTEGER NOT NULL,
+  monitor TEXT NOT NULL,
+  device TEXT NOT NULL,
+  status TEXT NOT NULL,
+  duration_ms INTEGER DEFAULT 0,
+  failure_stage TEXT,
+  error TEXT DEFAULT '',
+  screenshot TEXT,
+  trace TEXT,
+  video TEXT,
+  FOREIGN KEY(run_id) REFERENCES runs(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_check_results_run_id ON check_results(run_id);
+CREATE INDEX IF NOT EXISTS idx_check_results_monitor_device ON check_results(monitor,device,id);
 CREATE TABLE IF NOT EXISTS incidents(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   opened_at TEXT NOT NULL,

@@ -1,8 +1,8 @@
-# JTS Monitor v1.1
+# JTS Monitor v1.2
 
 Self-hosted synthetic monitoring for Jasper's Treat Shop. The dashboard is Next.js; the worker runs the proven Playwright desktop/mobile production journey and stores results in SQLite.
 
-## v1.1 highlights
+## v1.2 highlights
 
 - Professional Overview with availability, average duration, P95, incidents and recent runs
 - Manual **Run now** queue from the dashboard
@@ -36,5 +36,4 @@ Persistent data lives in the `jts-monitor-data` Docker volume. Playwright artifa
 
 ## Upgrade from v1.0
 
-Use the same Compose project/volume names and rebuild with v1.1. The SQLite schema is additive, so existing run and incident history is retained.
-# jts-monitoring
+Use the same Compose project/volume names and rebuild with v1.2. The SQLite schema is additive, so existing run and incident history is retained.
