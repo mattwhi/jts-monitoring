@@ -1,2 +1,0 @@
-'use client'; import {useEffect,useState} from 'react';
-export default function ThemeToggle(){const [dark,setDark]=useState(false);useEffect(()=>{const v=localStorage.getItem('jts-theme')==='dark';setDark(v);document.documentElement.dataset.theme=v?'dark':'light'},[]);function toggle(){const v=!dark;setDark(v);document.documentElement.dataset.theme=v?'dark':'light';localStorage.setItem('jts-theme',v?'dark':'light')}return <button className="iconbutton" onClick={toggle} title="Toggle colour mode">{dark?'☀':'◐'}</button>}

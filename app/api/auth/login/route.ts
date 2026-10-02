@@ -1,0 +1,2 @@
+import db from '@/lib/db';import {createSession,verifyPassword} from '@/lib/auth';
+export async function POST(req:Request){const {email,password}=await req.json();const u=db.prepare('SELECT * FROM users WHERE email=? AND disabled=0').get(String(email||'').trim().toLowerCase()) as any;if(!u||!verifyPassword(String(password||''),u.password_hash))return Response.json({error:'Invalid email or password.'},{status:401});await createSession(u.id);return Response.json({ok:true})}

@@ -1,1 +1,2 @@
-export async function GET(){return Response.json([{id:'jts-prod',name:"Jasper's Treat Shop",url:'https://jasperstreatshop.com',frequencyMinutes:5,checks:['homepage-shop-desktop','homepage-shop-mobile','guest-checkout-desktop','guest-checkout-mobile','build-a-treat-box-desktop','build-a-treat-box-mobile']}])}
+import {apiUser} from '@/lib/auth';
+export async function GET(){if(!await apiUser())return Response.json({error:'Unauthorized'},{status:401});return Response.json([{id:'jts-prod',name:"Jasper's Treat Shop",url:'https://jasperstreatshop.com',frequencyMinutes:5,checks:['homepage-shop-desktop','homepage-shop-mobile','guest-checkout-desktop','guest-checkout-mobile','build-a-treat-box-desktop','build-a-treat-box-mobile']}])}

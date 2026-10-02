@@ -4,13 +4,15 @@ function stageFrom(error?: string) {
   const m = error?.match(/\[STAGE:([A-Z_]+)\]/);
   return m?.[1] || null;
 }
-
+function jsonAttachment(result: TestResult, name: string) {
+  const a = result.attachments.find(x => x.name === name);
+  if (!a?.body) return {};
+  try { return JSON.parse(Buffer.from(a.body).toString('utf8')); } catch { return {}; }
+}
 class JtsReporter implements Reporter {
   onTestEnd(test: TestCase, result: TestResult) {
     const error = result.error?.message || result.errors?.map(e => e.message).filter(Boolean).join('\n') || '';
-    const attachments = Object.fromEntries(
-      result.attachments.filter(a => a.path).map(a => [a.name, a.path])
-    );
+    const attachments = Object.fromEntries(result.attachments.filter(a => a.path).map(a => [a.name, a.path]));
     const payload = {
       title: test.title,
       project: test.parent.project()?.name || 'unknown',
@@ -19,11 +21,12 @@ class JtsReporter implements Reporter {
       failure_stage: stageFrom(error),
       error: error.replace(/\[STAGE:[A-Z_]+\]\s*/, '').slice(0, 10000),
       attachments,
+      diagnostics: jsonAttachment(result, 'jts-diagnostics'),
+      metrics: jsonAttachment(result, 'jts-web-metrics'),
+      visual: jsonAttachment(result, 'jts-visual'),
     };
     console.log(`JTS_RESULT:${JSON.stringify(payload)}`);
   }
-  onEnd(result: FullResult) {
-    console.log(`JTS_SUMMARY:${JSON.stringify({ status: result.status })}`);
-  }
+  onEnd(result: FullResult) { console.log(`JTS_SUMMARY:${JSON.stringify({ status: result.status })}`); }
 }
 export default JtsReporter;

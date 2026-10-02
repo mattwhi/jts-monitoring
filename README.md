@@ -1,26 +1,15 @@
-# JTS Synthetic Monitoring v1.4
+# JTS Synthetic Monitoring v1.5
 
-Synthetic customer-journey monitoring for Jasper's Treat Shop.
+v1.5 adds browser-level diagnostics and root-cause evidence to the existing JTS synthetic observability platform.
 
-## v1.4
-- SLA/SLO dashboard with 24h, 7d and 30d windows
-- Per-monitor availability and P50/P95/P99 latency
-- 99.9% SLO and error-budget tracking
-- Incident/recovery history in the reliability view
-- JSON reporting endpoint at `/api/report?window=7d`
-- Retention cleanup extended to resolved incidents and alert events
-- Version remains sourced automatically from package.json
+## v1.5 additions
+- Browser console error capture per synthetic check.
+- Failed network request capture.
+- HTTP 4xx/5xx response capture.
+- Browser performance metrics: TTFB, FCP, LCP, CLS and observed INP.
+- Per-run root-cause inspection page.
+- Diagnostics view for recent failed checks.
+- Existing screenshots, video and Playwright traces remain captured.
+- Additive SQLite migration preserves existing v1.4 data.
 
-## Existing monitoring
-Six Playwright checks cover Homepage & Shop, Guest Checkout and Build-a-Treat-Box on desktop and mobile Chromium. v1.3 alerting and recovery behaviour is preserved.
-
-## Local validation
-```bash
-npm install
-npm run build
-npm run test:checkout
-docker compose build --no-cache
-docker compose up -d
-```
-
-Dashboard: http://localhost:3011
+The six v1.4 production synthetic checks, SLA/SLO reporting, alerting, retention, Docker port 3011 and Playwright 1.63.0 baseline are retained.

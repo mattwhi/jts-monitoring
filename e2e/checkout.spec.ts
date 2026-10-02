@@ -1,4 +1,7 @@
 import { test, expect, Page, Locator } from "@playwright/test";
+import fs from "fs";
+import path from "path";
+import { PNG } from "pngjs";
 
 const PRODUCT_PATH = process.env.JTS_MONITOR_PRODUCT || "";
 const TREAT_BOX_PATH = process.env.JTS_TREAT_BOX_PATH || "/build-a-treat-box/";
@@ -160,6 +163,89 @@ async function addStableProductFromShop(page: Page) {
     )
     .toBeTruthy();
 }
+
+type DiagnosticState = { consoleErrors: string[]; requestFailures: any[]; httpErrors: any[] };
+const diagnosticState = new WeakMap<Page, DiagnosticState>();
+
+function visualKey(testInfo: any) {
+  return `${testInfo.title}-${testInfo.project.name}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+function comparePng(current: Buffer, baseline: Buffer) {
+  const a = PNG.sync.read(current), b = PNG.sync.read(baseline);
+  if (a.width !== b.width || a.height !== b.height) return { diff_percent: 100, width: a.width, height: a.height, size_changed: true };
+  let changed = 0; const pixels = a.width * a.height;
+  for (let i=0;i<a.data.length;i+=4) {
+    const delta = Math.abs(a.data[i]-b.data[i])+Math.abs(a.data[i+1]-b.data[i+1])+Math.abs(a.data[i+2]-b.data[i+2]);
+    if (delta > 45) changed++;
+  }
+  return { diff_percent: Math.round((changed / pixels) * 10000) / 100, width: a.width, height: a.height, size_changed: false };
+}
+
+
+test.beforeEach(async ({ page }) => {
+  const state: DiagnosticState = { consoleErrors: [], requestFailures: [], httpErrors: [] };
+  diagnosticState.set(page, state);
+  page.on("console", msg => {
+    if (msg.type() === "error") state.consoleErrors.push(msg.text().slice(0, 1000));
+  });
+  page.on("requestfailed", req => state.requestFailures.push({
+    method: req.method(), url: req.url().slice(0, 1200), failure: req.failure()?.errorText || "request failed"
+  }));
+  page.on("response", res => {
+    if (res.status() >= 400) state.httpErrors.push({
+      method: res.request().method(), url: res.url().slice(0, 1200), status: res.status(), statusText: res.statusText()
+    });
+  });
+  await page.addInitScript(() => {
+    (window as any).__jtsVitals = { lcp: 0, cls: 0, inp: 0 };
+    try {
+      new PerformanceObserver(list => { for (const e of list.getEntries()) (window as any).__jtsVitals.lcp = e.startTime; })
+        .observe({ type: "largest-contentful-paint", buffered: true });
+      new PerformanceObserver(list => { for (const e of list.getEntries() as any) if (!e.hadRecentInput) (window as any).__jtsVitals.cls += e.value; })
+        .observe({ type: "layout-shift", buffered: true });
+      new PerformanceObserver(list => { for (const e of list.getEntries() as any) if (e.interactionId) (window as any).__jtsVitals.inp = Math.max((window as any).__jtsVitals.inp, e.duration || 0); })
+        .observe({ type: "event", buffered: true, durationThreshold: 40 } as any);
+    } catch {}
+  });
+});
+
+test.afterEach(async ({ page }, testInfo) => {
+  const state = diagnosticState.get(page) || { consoleErrors: [], requestFailures: [], httpErrors: [] };
+  const metrics = await page.evaluate(() => {
+    const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+    const fcp = performance.getEntriesByName("first-contentful-paint")[0];
+    const v = (window as any).__jtsVitals || {};
+    return {
+      url: location.href,
+      ttfb_ms: nav ? Math.round(nav.responseStart) : 0,
+      dom_content_loaded_ms: nav ? Math.round(nav.domContentLoadedEventEnd) : 0,
+      load_ms: nav ? Math.round(nav.loadEventEnd) : 0,
+      fcp_ms: fcp ? Math.round(fcp.startTime) : 0,
+      lcp_ms: v.lcp ? Math.round(v.lcp) : 0,
+      cls: typeof v.cls === "number" ? Math.round(v.cls * 1000) / 1000 : 0,
+      inp_ms: v.inp ? Math.round(v.inp) : 0,
+    };
+  }).catch(() => ({}));
+  await testInfo.attach("jts-diagnostics", { body: Buffer.from(JSON.stringify(state)), contentType: "application/json" });
+  await testInfo.attach("jts-web-metrics", { body: Buffer.from(JSON.stringify(metrics)), contentType: "application/json" });
+
+  if (process.env.JTS_VISUAL_ENABLED !== "0") {
+    const threshold = Number(process.env.JTS_VISUAL_THRESHOLD || "5") || 5;
+    const dataDir = process.env.DATA_DIR || path.join(process.cwd(), "data");
+    const baselineDir = path.join(dataDir, "visual-baselines");
+    const currentDir = path.join(dataDir, "visual-current");
+    fs.mkdirSync(baselineDir, { recursive: true }); fs.mkdirSync(currentDir, { recursive: true });
+    const key = visualKey(testInfo), baselinePath = path.join(baselineDir, `${key}.png`), currentPath = path.join(currentDir, `${key}.png`);
+    const current = await page.screenshot({ fullPage: true, animations: "disabled" }).catch(() => null);
+    if (current) {
+      fs.writeFileSync(currentPath, current);
+      let visual:any = { threshold_percent: threshold, current_path: currentPath, baseline_path: baselinePath };
+      if (!fs.existsSync(baselinePath)) { fs.writeFileSync(baselinePath, current); const png=PNG.sync.read(current); visual={...visual,baseline_created:true,status:"baseline",diff_percent:0,width:png.width,height:png.height}; }
+      else { const c=comparePng(current,fs.readFileSync(baselinePath)); visual={...visual,...c,baseline_created:false,status:c.diff_percent>threshold?"changed":"match"}; }
+      await testInfo.attach("jts-visual", { body: Buffer.from(JSON.stringify(visual)), contentType: "application/json" });
+    }
+  }
+});
 
 test.describe("Jasper’s Treat Shop production synthetic monitoring", () => {
   test("homepage and shop are healthy @critical", async ({ page }) => {

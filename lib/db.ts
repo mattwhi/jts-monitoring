@@ -65,6 +65,16 @@ CREATE TABLE IF NOT EXISTS run_requests(
   requested_at TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending'
 );
+CREATE TABLE IF NOT EXISTS users(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,email TEXT NOT NULL UNIQUE,name TEXT NOT NULL,password_hash TEXT NOT NULL,role TEXT NOT NULL DEFAULT 'viewer',disabled INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS sessions(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER NOT NULL,token_hash TEXT NOT NULL UNIQUE,created_at TEXT NOT NULL,expires_at TEXT NOT NULL,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS maintenance_windows(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT NULL,starts_at TEXT NOT NULL,ends_at TEXT NOT NULL,created_by INTEGER,created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token_hash);
 CREATE TABLE IF NOT EXISTS settings(
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
@@ -74,6 +84,21 @@ INSERT OR IGNORE INTO settings(key,value) VALUES('failure_threshold','2');
 INSERT OR IGNORE INTO settings(key,value) VALUES('retention_days','30');
 INSERT OR IGNORE INTO settings(key,value) VALUES('alerts_enabled','0');
 INSERT OR IGNORE INTO settings(key,value) VALUES('webhook_url','');
+INSERT OR IGNORE INTO settings(key,value) VALUES('visual_enabled','1');
+INSERT OR IGNORE INTO settings(key,value) VALUES('visual_threshold','5');
+INSERT OR IGNORE INTO settings(key,value) VALUES('registration_enabled','1');
 `);
+
+
+function ensureColumn(table: string, column: string, definition: string) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as any[];
+  if (!cols.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
+}
+
+ensureColumn("check_results", "diagnostics_json", "TEXT DEFAULT '{}'");
+ensureColumn("check_results", "metrics_json", "TEXT DEFAULT '{}'");
+ensureColumn("check_results", "visual_json", "TEXT DEFAULT '{}'");
 
 export default db;
