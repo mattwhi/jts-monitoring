@@ -1,8 +1,8 @@
-FROM mcr.microsoft.com/playwright:v1.55.0-noble
+FROM mcr.microsoft.com/playwright:v1.63.0-noble
 
 WORKDIR /app
 
-# Required for native Node modules such as better-sqlite3
+# Required to compile native modules such as better-sqlite3
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     build-essential \
@@ -10,11 +10,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
-
 RUN npm install
 
 COPY . .
-
 RUN npm run build
 
 EXPOSE 3000
